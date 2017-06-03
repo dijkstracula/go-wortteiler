@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    margin-bottom: 25px;
+    padding: 0;
+    background-color: #ddd;
+    color: #333;
+    text-align: center;
+
+    font-family: sans-serif;
+}
+
+#header {
+	font-size: 200%;
+	font-family: 'Ropa Sans' sans-serif;
+    padding: 25px;
+}
+
+#content {
+    display: inline-block;
+    background-color: white;
+    padding: 25px;
+    width: 80%;
+    text-align: left;
+    font-size: 18px;
+}
+
+#result {
+	border: 2px solid black;
+	width: 100%;
+	overflow: auto;
+}
+
+#tree {
+    display: table;
+	width: 100%;
+    background-color: #e5e5ff;
+    text-align: center;
+    font-size: 18px;
+    border: 1px solid black;
+}
+
+#about {
+}
+
+input {
+    margin: 0;
+    appearance: none;
+    box-shadow: none;
+    border-radius: none;
+    border: solid 2px #c9c9c9;
+
+}
+
+input[type="text"] {
+    width: 100%;
+    transition: border 0.3s;
+    font-size: 24px;
+}
+
+table {
+    width: 100%;
+}
+
+table tr {
+    text-align: center;
+    vertical-align: top;
+}
+
+h1, h2 {
+	margin: 0px;
+}
