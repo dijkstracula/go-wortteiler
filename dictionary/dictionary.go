@@ -3,6 +3,7 @@ package dictionary
 import (
 	"bufio"
 	"os"
+	"strings"
 )
 
 // Dictionary holds lookup tables for valid words, as well as
@@ -19,7 +20,8 @@ func setFromScanner(scanner *bufio.Scanner) (map[string]interface{}, error) {
 	set := make(map[string]interface{})
 
 	for scanner.Scan() {
-		set[scanner.Text()] = struct{}{}
+		t := strings.ToLower(scanner.Text())
+		set[t] = struct{}{}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
@@ -57,6 +59,10 @@ func FromFiles(wordPath, prefixPath, suffixPath string) (*Dictionary, error) {
 // valid word, prefix, or suffix.
 func ValidFunc(d *Dictionary) func(string) bool {
 	return func(s string) bool {
+		// setFromScanner downcases all input strings so as to have
+		// case-insensitive comparisons.
+		s = strings.ToLower(s)
+
 		// TODO: would be nice to short-circuit this, I guess
 		_, isWord := d.Words[s]
 		_, isPref := d.Prefixes[s]

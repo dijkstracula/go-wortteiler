@@ -26,6 +26,10 @@ func TestSetFromScanner(t *testing.T) {
 	if len(keys) != 4 {
 		t.Errorf("Expected 4 keys, got %d\n", len(keys))
 	}
+
+	if _, ok := set["a"]; !ok {
+		t.Errorf("Expected \"a\" downcased \"A\") to exist")
+	}
 }
 
 func TestFromFiles(t *testing.T) {
@@ -59,6 +63,7 @@ func TestValidFunc(t *testing.T) {
 		ok bool
 	}{
 		{"wort", true},
+		{"WORT", true},
 		{"aus", true},
 		{"en", true},
 		{"nichts", false},
