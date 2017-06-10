@@ -1,26 +1,66 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 
-	"github.com/dijkstracula/go-wortteiler/dictionary"
+	"github.com/dijkstracula/go-wortteiler/splitter"
 	"github.com/gorilla/mux"
 )
 
-func splitFunc(d *dictionary.Dictionary) http.HandlerFunc {
+func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("todo"))
+		respCode := http.StatusOK
+		var errString string
+		var tree *splitter.Node
+
+		defer func() {
+			var blob []byte
+			var err error
+
+			// If we hit a snag, write out a json error blob.
+			if respCode != http.StatusOK {
+				errResp := make(map[string]string)
+				errResp["err"] = errString
+
+				blob, err = json.Marshal(errResp)
+			} else {
+				blob, err = json.Marshal(tree)
+			}
+
+			if err != nil {
+				respCode = http.StatusInternalServerError
+			}
+			w.WriteHeader(respCode)
+			w.Write(blob)
+		}()
+
+		word, ok := mux.Vars(r)["word"]
+		if !ok {
+			respCode = http.StatusBadRequest
+			errString = "Missing 'word' parameter"
+			return
+		}
+		if len(word) > 64 {
+			respCode = http.StatusBadRequest
+			errString = "Word too long"
+			return
+		}
+
+		word = strings.ToLower(word)
+		tree = s(word)
 	}
 }
 
 // New produces a new HTTP handler with the appropriate endpoints configured.
-func New(d *dictionary.Dictionary) http.Handler {
+func New(splitter splitter.SplitFunc) http.Handler {
 	r := mux.NewRouter()
 
 	r.NewRoute().
 		Methods("POST").
-		Path("/split").
-		HandlerFunc(splitFunc(d))
+		Path("/split/{word}").
+		HandlerFunc(splitFunc(splitter))
 	r.NewRoute().
 		Methods("GET").
 		PathPrefix("/").

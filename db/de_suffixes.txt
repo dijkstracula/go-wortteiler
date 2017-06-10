@@ -3,7 +3,6 @@ archie
 artig
 bar
 chen
-e
 ei
 elchen
 ell
@@ -76,7 +75,6 @@ phobie
 prozentig
 reich
 rich
-s
 sam
 sch
 schaft

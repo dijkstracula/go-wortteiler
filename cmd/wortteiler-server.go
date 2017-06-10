@@ -9,12 +9,18 @@ import (
 
 	"github.com/dijkstracula/go-wortteiler/dictionary"
 	"github.com/dijkstracula/go-wortteiler/server"
+	"github.com/dijkstracula/go-wortteiler/splitter"
 )
 
 const (
 	wordPath = "db/de_words.txt"
 	prefPath = "db/de_prefixes.txt"
 	suffPath = "db/de_suffixes.txt"
+)
+
+var (
+	logPath = flag.String("logPath", "", "log file path (if unset, use stderr)")
+	port    = flag.Int("port", 8080, "The port to listen on")
 )
 
 func handleLogPath(logPath string) {
@@ -30,18 +36,18 @@ func handleLogPath(logPath string) {
 func main() {
 	fmt.Println("~~~ go-wortteiler ~~~ by Nathan Taylor <nbtaylor@gmail.com>")
 
-	logPath := flag.String("logPath", "", "log file path (if unset, use stderr)")
-	port := flag.Int("port", 8080, "The port to listen on")
 	flag.Parse()
 
 	handleLogPath(*logPath)
 
-	dict, err := dictionary.FromFiles(wordPath, prefPath, suffPath)
+	lookup, err := dictionary.FromFiles(wordPath, prefPath, suffPath)
 	if err != nil {
 		log.Fatalf("Dictionary creation failed: %v", err)
 	}
 
-	handlers := server.New(dict)
+	spl := splitter.Splitter(dictionary.ValidFunc(lookup))
+
+	handlers := server.New(spl)
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", *port),
 		Handler: handlers,

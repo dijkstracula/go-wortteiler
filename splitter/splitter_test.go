@@ -5,40 +5,6 @@ import (
 	"testing"
 )
 
-func TestOffsets(t *testing.T) {
-	tests := []struct {
-		in  int
-		out []int
-	}{
-		{
-			0,
-			nil,
-		},
-		{
-			1,
-			[]int{0},
-		},
-		{
-			2,
-			[]int{1, 0},
-		},
-		{
-			3,
-			[]int{1, 0, 2},
-		},
-		{
-			4,
-			[]int{2, 1, 3, 0},
-		},
-	}
-
-	for _, test := range tests {
-		if actual := offsets(test.in); !reflect.DeepEqual(actual, test.out) {
-			t.Errorf("offsets(%d) expected %q, got %q", test.in, test.out, actual)
-		}
-	}
-}
-
 func TestPartitions(t *testing.T) {
 	tests := []struct {
 		in  string
@@ -62,13 +28,48 @@ func TestPartitions(t *testing.T) {
 		},
 		{
 			"abcde",
-			[]partition{{"a", "bcde"}, {"abcd", "e"}, {"ab", "cde"}, {"abc", "de"}},
+			[]partition{{"a", "bcde"}, {"ab", "cde"}, {"abc", "de"}, {"abcd", "e"}},
 		},
 	}
 
 	for _, test := range tests {
 		if actual := partitions(test.in); !reflect.DeepEqual(actual, test.out) {
 			t.Errorf("partition(%q) expected %q, got %q", test.in, test.out, actual)
+		}
+	}
+}
+
+func TestScore(t *testing.T) {
+	tests := []struct {
+		in  *Node
+		num int
+		den int
+	}{
+		{
+			nil,
+			0, (2 << 0) - 1,
+		},
+		{
+			MakeLeaf("a"),
+			1, (2 << 1) - 1,
+		},
+		{
+			MakeNode("",
+				MakeLeaf("a"),
+				MakeLeaf("b")),
+			2, (2 << 2) - 1,
+		},
+		{
+			MakeNode("ab",
+				MakeLeaf("a"),
+				MakeLeaf("b")),
+			3, (2 << 2) - 1,
+		},
+	}
+
+	for _, test := range tests {
+		if actualNum, actualDen := test.in.Score(); actualNum != test.num || actualDen != test.den {
+			t.Errorf("%+q.Score() expected (%d,%d), got (%d,%d)", test.in, test.num, test.den, actualNum, actualDen)
 		}
 	}
 }
@@ -82,15 +83,15 @@ func TestTrivialDicts(t *testing.T) {
 
 	tests := []struct {
 		in       string
-		expected *SplitNode
+		expected *Node
 	}{
 		{"x", nil},
-		{"a", &SplitNode{"a", nil, nil}},
+		{"a", MakeLeaf("a")},
 		{"ab",
-			&SplitNode{"ab",
-				&SplitNode{"a", nil, nil},
-				&SplitNode{"b", nil, nil},
-			},
+			MakeNode("ab",
+				MakeLeaf("a"),
+				MakeLeaf("b"),
+			),
 		},
 	}
 
@@ -104,8 +105,7 @@ func TestTrivialDicts(t *testing.T) {
 
 func TestTagesbuch(t *testing.T) {
 	valid := func(str string) bool {
-		return str == "tag" ||
-			str == "es" ||
+		return str == "tages" ||
 			str == "buch" ||
 			str == "tagesbuch"
 	}
@@ -116,17 +116,57 @@ func TestTagesbuch(t *testing.T) {
 	if tree == nil {
 		t.Errorf("Should have expected a valid tree; got nil")
 	}
-	if tree.word != "tagesbuch" {
-		t.Errorf("Tree root should be \"tagesbuch\"; got %+q", tree.word)
+	if tree.Word != "tagesbuch" {
+		t.Errorf("Tree root should be \"tagesbuch\"; got %+q", tree.Word)
 	}
 
-	// "tages / buch" is more even than "tag / esbuch", so make sure we get the former.
+	// "tages / buch" is more even than "tag / esbuch", so make sure we get the latter.
 	if !reflect.DeepEqual(tree,
-		&SplitNode{
+		MakeNode(
 			"tagesbuch",
-			&SplitNode{"", &SplitNode{"tag", nil, nil}, &SplitNode{"es", nil, nil}},
-			&SplitNode{"buch", nil, nil},
-		}) {
+			MakeLeaf("tages"),
+			MakeLeaf("buch"),
+		)) {
 		t.Errorf("Split not optmially even: got %+q", tree)
+	}
+}
+
+func TestEntschuldigung(t *testing.T) {
+	valid := func(str string) bool {
+		return str == "ent" ||
+			str == "schuld" ||
+			str == "schuldig" ||
+			str == "ig" ||
+			str == "ung" ||
+			str == "entschuldigung"
+	}
+
+	splitter := Splitter(valid)
+	tree := splitter("entschuldigung")
+
+	if tree == nil {
+		t.Errorf("Should have expected a valid tree; got nil")
+	}
+	if tree.Word != "entschuldigung" {
+		t.Errorf("Tree root should be \"entschuldigung\"; got %+q", tree.Word)
+	}
+
+	// "tages / buch" is more even than "tag / esbuch", so make sure we get the latter.
+	if !reflect.DeepEqual(tree,
+		MakeNode(
+			"entschuldigung",
+			MakeLeaf("ent"),
+			MakeNode(
+				"", /* entschuldigung */
+				MakeNode(
+					"schuldig", /* schuldig */
+					MakeLeaf("schuld"),
+					MakeLeaf("ig"),
+				),
+				MakeLeaf("ung"),
+			),
+		),
+	) {
+		t.Errorf("Split not optmially even: got %v", tree)
 	}
 }
