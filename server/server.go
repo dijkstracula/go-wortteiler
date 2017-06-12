@@ -1,12 +1,19 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/dijkstracula/go-wortteiler/dictionary"
 	"github.com/dijkstracula/go-wortteiler/splitter"
 	"github.com/gorilla/mux"
+)
+
+var (
+	reqTimeout = 5 * time.Second
 )
 
 func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
@@ -15,6 +22,10 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 		var errString string
 		var tree *splitter.Node
 
+		ctx, cancel := context.WithTimeout(context.Background(), reqTimeout)
+		defer cancel()
+
+		// Write out valid json even on early returns
 		defer func() {
 			var blob []byte
 			var err error
@@ -36,6 +47,7 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 			w.Write(blob)
 		}()
 
+		// Grab the word, canonicalize, split, and translate.
 		word, ok := mux.Vars(r)["word"]
 		if !ok {
 			respCode = http.StatusBadRequest
@@ -50,6 +62,7 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 
 		word = strings.ToLower(word)
 		tree = s(word)
+		dictionary.Translate(ctx, tree)
 	}
 }
 

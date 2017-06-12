@@ -10,7 +10,7 @@ type partition struct {
 
 // Node is a partitioning of a dictionary word into two smaller ones.
 type Node struct {
-	Word   string `json:"de",omitempty`
+	Word   string `json:"defn,omitempty"`
 	Prefix *Node  `json:"prefix,omitempty"`
 	Suffix *Node  `json:"suffix,omitempty"`
 }
@@ -41,6 +41,17 @@ func MakeLeaf(word string) *Node {
 	n.Word = word
 
 	return &n
+}
+
+// ForEach invokes the function `f` as an inorder traversal on the Tree.
+func (n *Node) ForEach(f func(*Node)) {
+	if n == nil {
+		return
+	}
+
+	n.Prefix.ForEach(f)
+	f(n)
+	n.Suffix.ForEach(f)
 }
 
 // Score scores a Node.
@@ -152,7 +163,7 @@ func Splitter(valid func(string) bool) SplitFunc {
 
 				//			fmt.Printf("Comparing %s,%s\n", partition.prefix, partition.suffix)
 				if n, d := newTree.Score(); float64(n)/float64(d) > float64(treeN)/float64(treeD) {
-					fmt.Printf("%q (%d,%d) better than %q (%d,%d)\n", newTree, n, d, tree, treeN, treeD)
+					//fmt.Printf("%q (%d,%d) better than %q (%d,%d)\n", newTree, n, d, tree, treeN, treeD)
 					tree = newTree
 					treeN = n
 					treeD = d

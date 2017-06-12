@@ -1,7 +1,9 @@
 package splitter
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -35,6 +37,39 @@ func TestPartitions(t *testing.T) {
 	for _, test := range tests {
 		if actual := partitions(test.in); !reflect.DeepEqual(actual, test.out) {
 			t.Errorf("partition(%q) expected %q, got %q", test.in, test.out, actual)
+		}
+	}
+}
+
+func TestForEach(t *testing.T) {
+	nodesSeen := 0
+
+	tests := []struct {
+		in  *Node
+		f   func(*Node)
+		out *Node
+	}{
+		{
+			MakeLeaf("a"),
+			func(n *Node) { n.Word = strings.ToUpper(n.Word) },
+			MakeLeaf("A"),
+		},
+		{
+			// This ensures that the order that we visit nodes in is what we expect.
+			MakeNode("ab",
+				MakeLeaf("a"),
+				MakeLeaf("b")),
+			func(n *Node) { nodesSeen++; n.Word = fmt.Sprintf("%d", nodesSeen) },
+			MakeNode("2",
+				MakeLeaf("1"),
+				MakeLeaf("3")),
+		},
+	}
+
+	for _, test := range tests {
+		test.in.ForEach(test.f)
+		if !reflect.DeepEqual(test.in, test.out) {
+			t.Errorf("Expected %v, got %v", test.out, test.in)
 		}
 	}
 }

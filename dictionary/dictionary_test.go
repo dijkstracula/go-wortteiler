@@ -18,13 +18,8 @@ func TestSetFromScanner(t *testing.T) {
 		t.Errorf("Error building set: %v\n", err)
 	}
 
-	// lol are you kidding
-	var keys []string
-	for k := range set {
-		keys = append(keys, k)
-	}
-	if len(keys) != 4 {
-		t.Errorf("Expected 4 keys, got %d\n", len(keys))
+	if len(set) != 4 {
+		t.Errorf("Expected 4 keys, got %d\n", len(set))
 	}
 
 	if _, ok := set["a"]; !ok {

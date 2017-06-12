@@ -2,10 +2,13 @@ package dictionary
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/dijkstracula/go-wortteiler/splitter"
 
 	"golang.org/x/net/dict"
 )
@@ -16,6 +19,10 @@ var (
 
 	// ErrWordNotFound is the error for when Translate() does not find a particular word.
 	ErrWordNotFound = fmt.Errorf("No definitions found")
+
+	// ErrContextCanceled is the error produced when a tree walk is interrupted with a
+	// context timeout or cancelation.
+	ErrContextCanceled = fmt.Errorf("Context canceled during iteration")
 )
 
 // Dictionary holds lookup tables for valid words, as well as
@@ -67,7 +74,43 @@ func FromFiles(wordPath, prefixPath, suffixPath string) (*Dictionary, error) {
 	return &Dictionary{words, prefixes, suffixes}, nil
 }
 
-// Translate connects to the remote dictd instance and looks up the
+// Translate iterates through a Tree and translates all the words in
+// turn.
+func Translate(ctx context.Context, tree *splitter.Node) error {
+	var interrupted bool
+	var globalErr error
+
+	f := func(n *splitter.Node) {
+		// Make this a no-op if the context is canceled, or if a previous
+		// call to d.translate produced an error.
+		if globalErr != nil {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			interrupted = true
+			return
+		default:
+			break
+		}
+		txt, localErr := translate(n.Word)
+		if localErr != nil && localErr != ErrWordNotFound {
+			globalErr = localErr
+		} else if len(txt) > 0 {
+			n.Word = txt
+		}
+	}
+
+	tree.ForEach(f)
+
+	if interrupted {
+		globalErr = ErrContextCanceled
+	}
+
+	return globalErr
+}
+
+// translate connects to the remote dictd instance and looks up the
 // supplied word.  It's slightly annoying that this spins up and
 // tears down a TCP connection for each lookup, but in prod we are
 // running a localhost dictd instance and the responses are all
@@ -77,7 +120,15 @@ func FromFiles(wordPath, prefixPath, suffixPath string) (*Dictionary, error) {
 //
 // If the word is not found in the dictionary, returns sentinel error
 // `ErrWordNotFound`.
-func (d *Dictionary) Translate(deu string) (string, error) {
+func translate(deu string) (string, error) {
+	if len(deu) == 0 {
+		return "", nil
+	}
+
+	fmt.Printf("in translate(%+v)\n", deu)
+
+	// TODO: make a worker pool of these rather than just restarting
+	// the connection every time
 	client, err := dict.Dial("tcp", *dictdServer)
 	if err != nil {
 		return "", err
@@ -85,13 +136,14 @@ func (d *Dictionary) Translate(deu string) (string, error) {
 	defer client.Close()
 
 	defns, err := client.Define(*dictdDict, deu)
-	if err != nil {
-		return "", err
-	}
 	if len(defns) == 0 {
 		return "", ErrWordNotFound
 	}
-	return defns[0].Word, nil
+	if err != nil {
+		return "", err
+	}
+
+	return string(defns[0].Text), nil
 }
 
 // ValidFunc produces a function that produces whether a given string is a
