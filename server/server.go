@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 )
 
 var (
+	logPrefix  = "[server]"
 	reqTimeout = 5 * time.Second
 )
 
@@ -24,6 +27,8 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(context.Background(), reqTimeout)
 		defer cancel()
+
+		logPrefix := fmt.Sprintf("%s %v ", logPrefix, r.RemoteAddr)
 
 		// Write out valid json even on early returns
 		defer func() {
@@ -43,9 +48,13 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 			if err != nil {
 				respCode = http.StatusInternalServerError
 			}
+
+			log.Printf("%s <- %d (%d bytes)\n", logPrefix, respCode, len(blob))
 			w.WriteHeader(respCode)
 			w.Write(blob)
 		}()
+
+		log.Printf("%s -> %s\n", logPrefix, r.URL.Path)
 
 		// Grab the word, canonicalize, split, and translate.
 		word, ok := mux.Vars(r)["word"]
@@ -62,7 +71,11 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 
 		word = strings.ToLower(word)
 		tree = s(word)
-		dictionary.Translate(ctx, tree)
+		if err := dictionary.Translate(ctx, tree); err != nil {
+			respCode = http.StatusInternalServerError
+			errString = fmt.Sprintf("Translation error: %v", err)
+			return
+		}
 	}
 }
 

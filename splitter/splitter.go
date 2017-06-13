@@ -161,9 +161,7 @@ func Splitter(valid func(string) bool) SplitFunc {
 					newTree.Word = ""
 				}
 
-				//			fmt.Printf("Comparing %s,%s\n", partition.prefix, partition.suffix)
 				if n, d := newTree.Score(); float64(n)/float64(d) > float64(treeN)/float64(treeD) {
-					//fmt.Printf("%q (%d,%d) better than %q (%d,%d)\n", newTree, n, d, tree, treeN, treeD)
 					tree = newTree
 					treeN = n
 					treeD = d

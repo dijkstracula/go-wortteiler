@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -14,6 +15,8 @@ import (
 )
 
 var (
+	logPrefix = "[dictionary]"
+
 	dictdServer = flag.String("dictdServer", "all.dict.org:dict", "dictd server path")
 	dictdDict   = flag.String("dictdDict", "fd-deu-eng", "dictd dictionary to lookup")
 
@@ -88,6 +91,7 @@ func Translate(ctx context.Context, tree *splitter.Node) error {
 		}
 		select {
 		case <-ctx.Done():
+			log.Printf("%s Context canceled: %v\n", logPrefix, ctx.Err())
 			interrupted = true
 			return
 		default:
@@ -125,12 +129,11 @@ func translate(deu string) (string, error) {
 		return "", nil
 	}
 
-	fmt.Printf("in translate(%+v)\n", deu)
-
 	// TODO: make a worker pool of these rather than just restarting
 	// the connection every time
 	client, err := dict.Dial("tcp", *dictdServer)
 	if err != nil {
+		log.Printf("%s %v\n", logPrefix, err)
 		return "", err
 	}
 	defer client.Close()
@@ -140,6 +143,7 @@ func translate(deu string) (string, error) {
 		return "", ErrWordNotFound
 	}
 	if err != nil {
+		log.Printf("%s %v\n", logPrefix, err)
 		return "", err
 	}
 

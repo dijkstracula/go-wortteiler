@@ -75,6 +75,7 @@ phobie
 prozentig
 reich
 rich
+s
 sam
 sch
 schaft

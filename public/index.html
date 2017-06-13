@@ -5,10 +5,110 @@
         <link href='https://fonts.googleapis.com/css?family=Ropa+Sans' rel='stylesheet' type='text/css'>
         <title>Wortteiler</title>
         <link rel="stylesheet" href="css/style.css">
+
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"> </script>
     </head>
     <body>
+
+        <div id="header">
+            <h1>Bandwörtersplitter</h1>
+            <h2>compound word explorer</h2>
+        </div>
+
+        <div id="content">
+            <div id="about">
+                Enter a compound word in the form below to see possible splits.  Examples: "unabhängigkeitserklärung",
+                "entschuldigung".
+            </div>
+
+            <div id="input">
+                <form id="lookup" action="/">
+                    <input type="text" name="q" value="unabhängigkeitserklärung">
+                </form>
+            </div>
+        </div>
+
+        <hr/>
         <div id="footer">
             <p>Mit Liebe von <a href="http://nathan.dijkstracula.net/">Nathan</a> gemacht | <a href="https://github.com/dijkstracula/go-wortteiler">source</a></p>
         </div>
+
+
+        <script type="text/javascript">
+/* TODO: oh holy moses this needs refactoring */
+$( "#lookup" ).submit(function( event ) {
+    event.preventDefault();
+
+    var $form = $( this ),
+            input = $form.find( "input[name='q']" );
+    var path = "/split/" + input.val();
+
+    // `reset` resets the state of the page to a default one.
+    var reset = function() {
+        input.attr("disabled", false);
+        result.empty()
+    }
+
+    // `f` renders a subtree onto a div.
+    var render = function render(parentDiv, tree) {
+        // TODO: pull into a `renderNode()` or something
+        if (tree.defn !== undefined) {
+
+            tree.defn = tree.defn.replace(/\n$/, "");
+
+            // The response we get back from the dictionary server is a newline-separated
+            // dict entry.  TODO: should we split this on the server side?
+            var lines = tree.defn.split("\n");
+            var word = lines[0].split(" ")[0];
+            
+            var link = $('<a />',{
+                text: word,
+                href: "http://dict.leo.org/englisch-deutsch/" + word
+            });
+            $(parentDiv).append(link);
+
+            if (lines.length > 1) {
+                var defn = lines[lines.length - 1];
+                $(parentDiv).append($('<p>').text(defn));
+            }
+        }
+
+        if (tree.prefix !== undefined && tree.suffix !== undefined) {
+            var tbl = $(document.createElement('table'));
+
+            var tr = $(document.createElement('tr'));
+            $(tbl).append(tr);
+
+            var leftChild = $(document.createElement('td'));
+            $(tr).append(leftChild);
+
+            var rightChild = $(document.createElement('td'));
+            $(tr).append(rightChild);
+
+            render(leftChild, tree.prefix);
+            render(rightChild, tree.suffix);
+
+            $(parentDiv).append(tbl);
+        }
+    }
+
+    var result = $( document.createElement('div') ).attr("id", "result");
+ 
+    $("#input").after(result);
+
+    result.text("Loading").show();
+    
+    input.attr("disabled", true);
+    $.post( path, function( data ) {
+        reset();
+        var tree = $( document.createElement('div') ).attr("id", "tree");
+        $(result).prepend(tree);
+
+        var unmarshaledData = JSON.parse(data);
+        render(tree, unmarshaledData);
+    });
+});
+        </script>
+
     </body>
 </html>

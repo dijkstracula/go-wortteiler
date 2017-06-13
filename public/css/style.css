@@ -10,22 +10,22 @@ body {
 }
 
 #header {
-	font-size: 200%;
+	font-size: 150%;
 	font-family: 'Ropa Sans' sans-serif;
-    padding: 25px;
+    padding: 15px;
 }
 
 #content {
     display: inline-block;
     background-color: white;
-    padding: 25px;
+    padding: 15px;
     width: 80%;
     text-align: left;
     font-size: 18px;
 }
 
 #result {
-	border: 2px solid black;
+    text-align: center;
 	width: 100%;
 	overflow: auto;
 }
@@ -34,7 +34,6 @@ body {
     display: table;
 	width: 100%;
     background-color: #e5e5ff;
-    text-align: center;
     font-size: 18px;
     border: 1px solid black;
 }
@@ -54,11 +53,13 @@ input {
 input[type="text"] {
     width: 100%;
     transition: border 0.3s;
+    text-align: center;
     font-size: 24px;
 }
 
 table {
     width: 100%;
+	border: 1px solid black;
 }
 
 table tr {
