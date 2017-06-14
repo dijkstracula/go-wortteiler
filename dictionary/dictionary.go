@@ -101,7 +101,8 @@ func Translate(ctx context.Context, tree *splitter.Node) error {
 		if localErr != nil && localErr != ErrWordNotFound {
 			globalErr = localErr
 		} else if len(txt) > 0 {
-			n.Word = txt
+			txt = strings.TrimSpace(txt)
+			n.Defn = txt
 		}
 	}
 
