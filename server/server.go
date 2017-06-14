@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/dijkstracula/go-wortteiler/dictionary"
 	"github.com/dijkstracula/go-wortteiler/splitter"
@@ -18,6 +19,18 @@ var (
 	logPrefix  = "[server]"
 	reqTimeout = 5 * time.Second
 )
+
+func validateInput(s string) bool {
+	if len(s) == 0 || len(s) > 64 {
+		return false
+	}
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+	return true
+}
 
 func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,15 +70,10 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 		log.Printf("%s -> %s\n", logPrefix, r.URL.Path)
 
 		// Grab the word, canonicalize, split, and translate.
-		word, ok := mux.Vars(r)["word"]
-		if !ok {
+		word, _ := mux.Vars(r)["word"]
+		if !validateInput(word) {
 			respCode = http.StatusBadRequest
-			errString = "Missing 'word' parameter"
-			return
-		}
-		if len(word) > 64 {
-			respCode = http.StatusBadRequest
-			errString = "Word too long"
+			errString = "Invalid input word"
 			return
 		}
 
