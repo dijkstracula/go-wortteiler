@@ -92,7 +92,7 @@ func New(splitter splitter.SplitFunc) http.Handler {
 	r := mux.NewRouter()
 
 	r.NewRoute().
-		Methods("POST").
+		Methods("GET").
 		Path("/split/{word}").
 		HandlerFunc(splitFunc(splitter))
 	r.NewRoute().

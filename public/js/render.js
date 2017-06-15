@@ -45,6 +45,7 @@ function render(parentDiv, tree) {
 $( "#lookup" ).submit(function( event ) {
     event.preventDefault();
 
+    reset();
     console.log("!");
 
     var $form = $( this ),
