@@ -10,10 +10,10 @@ type partition struct {
 
 // Node is a partitioning of a dictionary word into two smaller ones.
 type Node struct {
-	Word   string `json:"word,omitempty"`
-	Defn   string `json:"defn,omitempty"`
-	Prefix *Node  `json:"prefix,omitempty"`
-	Suffix *Node  `json:"suffix,omitempty"`
+	Word   string   `json:"word,omitempty"`
+	Defns  []string `json:"defns,omitempty"`
+	Prefix *Node    `json:"prefix,omitempty"`
+	Suffix *Node    `json:"suffix,omitempty"`
 }
 
 // String makes an string.

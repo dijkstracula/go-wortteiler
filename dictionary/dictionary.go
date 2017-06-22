@@ -97,12 +97,11 @@ func Translate(ctx context.Context, tree *splitter.Node) error {
 		default:
 			break
 		}
-		txt, localErr := translate(n.Word)
+		defns, localErr := translate(n.Word)
 		if localErr != nil && localErr != ErrWordNotFound {
 			globalErr = localErr
-		} else if len(txt) > 0 {
-			txt = strings.TrimSpace(txt)
-			n.Defn = txt
+		} else if len(defns) > 0 {
+			n.Defns = defns
 		}
 	}
 
@@ -125,9 +124,9 @@ func Translate(ctx context.Context, tree *splitter.Node) error {
 //
 // If the word is not found in the dictionary, returns sentinel error
 // `ErrWordNotFound`.
-func translate(deu string) (string, error) {
+func translate(deu string) ([]string, error) {
 	if len(deu) == 0 {
-		return "", nil
+		return nil, nil
 	}
 
 	// TODO: make a worker pool of these rather than just restarting
@@ -135,20 +134,35 @@ func translate(deu string) (string, error) {
 	client, err := dict.Dial("tcp", *dictdServer)
 	if err != nil {
 		log.Printf("%s %v\n", logPrefix, err)
-		return "", err
+		return nil, err
 	}
 	defer client.Close()
 
 	defns, err := client.Define(*dictdDict, deu)
 	if len(defns) == 0 {
-		return "", ErrWordNotFound
+		return nil, ErrWordNotFound
 	}
 	if err != nil {
 		log.Printf("%s %v\n", logPrefix, err)
-		return "", err
+		return nil, err
 	}
 
-	return string(defns[0].Text), nil
+	var strs []string
+	for _, d := range defns {
+		// freedict deu-eng has multiple defns split on newlines.
+		for _, line := range strings.Split(string(d.Text), "\n") {
+			// german-english tends to separate multiple defns on a
+			// a line with a semicolon.
+			for _, s := range strings.Split(line, ";") {
+				s = strings.TrimSpace(s)
+				if len(s) > 0 {
+					strs = append(strs, strings.TrimSpace(s))
+				}
+			}
+		}
+	}
+
+	return strs, nil
 }
 
 // ValidFunc produces a function that produces whether a given string is a

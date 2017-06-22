@@ -8,7 +8,7 @@ function reset() {
 
 function render(parentDiv, tree) {
     // TODO: pull into a `renderNode()` or something
-    if (tree.defn !== undefined) {
+    if (tree.defns !== undefined) {
 
         var link = $('<a />',{
             text: tree.word,
@@ -16,9 +16,9 @@ function render(parentDiv, tree) {
         });
         $(parentDiv).append(link);
 
-        var lines = tree.defn.split("\n");
-        if (lines.length > 1) {
-            var defn = lines[lines.length - 1];
+        var n = (tree.defns.length < 3 ? tree.defns.length : 3);
+        for (i = 0; i < n; i++) {
+            var defn = tree.defns[i];
             $(parentDiv).append($('<pre>').text(defn));
         }
     }
@@ -55,7 +55,7 @@ $( "#lookup" ).submit(function( event ) {
     $("#result").text("Loading").show();
 
     input.attr("disabled", true);
-    $.post(path)
+    $.get(path)
         .fail(function(xhr, status, err) {
             $("#result").text("Error: " + status)
         })

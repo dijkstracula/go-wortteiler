@@ -87,9 +87,16 @@ func splitFunc(s splitter.SplitFunc) http.HandlerFunc {
 	}
 }
 
+func notFound(w http.ResponseWriter, r *http.Request) {
+	logPrefix := fmt.Sprintf("%s %v ", logPrefix, r.RemoteAddr)
+	log.Printf("%s -> %s\n", logPrefix, r.URL.Path)
+	log.Printf("%s <- %d\n", logPrefix, 404)
+}
+
 // New produces a new HTTP handler with the appropriate endpoints configured.
 func New(splitter splitter.SplitFunc) http.Handler {
 	r := mux.NewRouter()
+	r.NotFoundHandler = http.HandlerFunc(notFound)
 
 	r.NewRoute().
 		Methods("GET").
