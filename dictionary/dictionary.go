@@ -155,7 +155,9 @@ func translate(deu string) ([]string, error) {
 			// a line with a semicolon.
 			for _, s := range strings.Split(line, ";") {
 				s = strings.TrimSpace(s)
-				if len(s) > 0 {
+				// german-english also seems to have the word itself
+				// in the translated response?
+				if !strings.EqualFold(s, deu) && len(s) > 0 {
 					strs = append(strs, strings.TrimSpace(s))
 				}
 			}
