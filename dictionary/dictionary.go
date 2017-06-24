@@ -18,7 +18,7 @@ var (
 	logPrefix = "[dictionary]"
 
 	dictdServer = flag.String("dictdServer", "all.dict.org:dict", "dictd server path")
-	dictdDict   = flag.String("dictdDict", "fd-deu-eng", "dictd dictionary to lookup")
+	dictdDict   = flag.String("dictdDict", "fd-deu-eng", "dictd dictionaries to lookup (comma-separated)")
 
 	// ErrWordNotFound is the error for when Translate() does not find a particular word.
 	ErrWordNotFound = fmt.Errorf("No definitions found")
@@ -138,33 +138,42 @@ func translate(deu string) ([]string, error) {
 	}
 	defer client.Close()
 
-	defns, err := client.Define(*dictdDict, deu)
-	if len(defns) == 0 {
-		return nil, ErrWordNotFound
-	}
-	if err != nil {
-		log.Printf("%s %v\n", logPrefix, err)
-		return nil, err
-	}
+	for _, dict := range strings.Split(*dictdDict, ",") {
+		log.Printf("%s looking up %s in %s\n", logPrefix, deu, dict)
+		defns, err := client.Define(dict, deu)
+		if len(defns) == 0 {
+			continue
+		}
+		if err != nil {
+			log.Printf("%s %v\n", logPrefix, err)
+			return nil, err
+		}
 
-	var strs []string
-	for _, d := range defns {
-		// freedict deu-eng has multiple defns split on newlines.
-		for _, line := range strings.Split(string(d.Text), "\n") {
-			// german-english tends to separate multiple defns on a
-			// a line with a semicolon.
-			for _, s := range strings.Split(line, ";") {
-				s = strings.TrimSpace(s)
-				// german-english also seems to have the word itself
-				// in the translated response?
-				if !strings.EqualFold(s, deu) && len(s) > 0 {
-					strs = append(strs, strings.TrimSpace(s))
+		var strs []string
+		for _, d := range defns {
+			// freedict deu-eng has multiple defns split on newlines.
+			for _, line := range strings.Split(string(d.Text), "\n") {
+				// german-english tends to separate multiple defns on a
+				// a line with a semicolon.
+				for _, s := range strings.Split(line, ";") {
+					s = strings.TrimSpace(s)
+					// german-english also seems to have the word itself
+					// in the translated response?
+					if strings.EqualFold(s, deu) || len(s) == 0 {
+						continue
+					}
+					if s[0] == '{' && s[len(s)-1] == '}' {
+						continue //this is a german-englishism
+					}
+					strs = append(strs, s)
 				}
 			}
 		}
+
+		return strs, nil
 	}
 
-	return strs, nil
+	return nil, ErrWordNotFound
 }
 
 // ValidFunc produces a function that produces whether a given string is a
