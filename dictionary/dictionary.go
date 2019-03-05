@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/dijkstracula/go-wortteiler/splitter"
@@ -18,7 +19,7 @@ var (
 	logPrefix = "[dictionary]"
 
 	dictdServer = flag.String("dictdServer", "all.dict.org:dict", "dictd server path")
-	dictdDict   = flag.String("dictdDict", "fd-deu-eng", "dictd dictionaries to lookup (comma-separated)")
+	dictdDict   = flag.String("dictdDict", "fd-deu-eng,german-english", "dictd dictionaries to lookup (comma-separated)")
 
 	// ErrWordNotFound is the error for when Translate() does not find a particular word.
 	ErrWordNotFound = fmt.Errorf("No definitions found")
@@ -125,6 +126,8 @@ func Translate(ctx context.Context, tree *splitter.Node) error {
 // If the word is not found in the dictionary, returns sentinel error
 // `ErrWordNotFound`.
 func translate(deu string) ([]string, error) {
+	strset := make(map[string]bool)
+
 	if len(deu) == 0 {
 		return nil, nil
 	}
@@ -149,7 +152,6 @@ func translate(deu string) ([]string, error) {
 			return nil, err
 		}
 
-		var strs []string
 		for _, d := range defns {
 			// freedict deu-eng has multiple defns split on newlines.
 			for _, line := range strings.Split(string(d.Text), "\n") {
@@ -157,23 +159,43 @@ func translate(deu string) ([]string, error) {
 				// a line with a semicolon.
 				for _, s := range strings.Split(line, ";") {
 					s = strings.TrimSpace(s)
-					// german-english also seems to have the word itself
-					// in the translated response?
-					if strings.EqualFold(s, deu) || len(s) == 0 {
+					if len(s) == 0 {
 						continue
 					}
-					if s[0] == '{' && s[len(s)-1] == '}' {
-						continue //this is a german-englishism
+					// german-english also seems to have the word itself
+					// in the translated response?
+					if strings.EqualFold(s, deu) {
+						continue
 					}
-					strs = append(strs, s)
+
+					// german-english hands us pure dictionary
+					// defs which are not super readable
+					if strings.Contains(s,"{") ||
+					   strings.Contains(s,"<") ||
+					   strings.Contains(s,"/") ||
+					   strings.Contains(s,"(") {
+						continue 
+					}
+					strset[s] = true
 				}
 			}
 		}
-
-		return strs, nil
 	}
 
-	return nil, ErrWordNotFound
+	if len(strset) == 0 {
+		return nil, ErrWordNotFound
+	}
+
+	var strs []string
+	for s, _ := range(strset) {
+		strs = append(strs, s)
+	}
+	
+	sort.Slice(strs, func (i,j int) bool {
+		return len(strs[i]) < len(strs[j])
+	})
+
+	return strs, nil
 }
 
 // ValidFunc produces a function that produces whether a given string is a

@@ -11,7 +11,6 @@ function render(tree) {
 	return undefined;
     }
 
-    console.log(tree);
     var node = $('<div/>', {class: 'node'});
 
     if (tree.word !== undefined && tree.defns !== undefined) {
@@ -62,7 +61,7 @@ $( "#lookup" ).submit(function( event ) {
     input.attr("disabled", true);
     $.get(path)
         .fail(function(xhr, status, err) {
-            $("#result").text("Error: " + status)
+            $("#result").text("Error: " + status + " : " + err)
         })
         .done(function( data ) {
             reset();

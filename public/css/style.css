@@ -35,8 +35,13 @@ ul {
     list-style: none;
     text-align: center;
     justify-content: center;
+    padding-left: 0;
+
     > li {
 	box-sizing: border-box;
+	padding: 5px 5px;
+
+
     }
 }
 #tree {
@@ -45,6 +50,18 @@ ul {
     background-color: #e5e5ff;
     font-size: 18px;
     border: 1px solid black;
+}
+
+.node {
+    flex: 1;
+    position: relative;
+    padding: 15px 10px 10px 10px;
+
+	:after {
+	    border-left: 10px solid green;
+	    content: "foo";
+	    height: 30px;
+	}
 }
 
 #about {
@@ -71,14 +88,11 @@ table {
     border: 1px solid black;
 }
 
-.node {
-    flex: 1;
-    position: relative;
-}
-
 .defn {
     border: 1px solid black;
+    padding 5px 5px 5px 5px;
 }
+
 h1, h2 {
 	margin: 0px;
 }
