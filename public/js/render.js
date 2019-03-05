@@ -6,40 +6,45 @@ function reset() {
     $("#result").empty()
 }
 
-function render(parentDiv, tree) {
-    // TODO: pull into a `renderNode()` or something
-    if (tree.defns !== undefined) {
+function render(tree) {
+    if (tree === undefined) {
+	return undefined;
+    }
 
+    console.log(tree);
+    var node = $('<div/>', {class: 'node'});
+
+    if (tree.word !== undefined && tree.defns !== undefined) {
         var link = $('<a />',{
             text: tree.word,
             href: "http://dict.leo.org/englisch-deutsch/" + tree.word
         });
-        $(parentDiv).append(link);
+        $(node).append(link);
+
+        var defn = $('<div/>', {class: 'defn'});
+        $(node).append(defn);
 
         var n = (tree.defns.length < 3 ? tree.defns.length : 3);
         for (i = 0; i < n; i++) {
-            var defn = tree.defns[i];
-            $(parentDiv).append($('<pre>').text(defn));
+            var d = tree.defns[i];
+            $(defn).append($('<pre>').text(d));
         }
     }
 
-    if (tree.prefix !== undefined && tree.suffix !== undefined) {
-        var tbl = $(document.createElement('table'));
+    var ul = $(document.createElement('ul'));
+    $(node).append(ul);
+    
+    var leftEl = render(tree.prefix);
+    var rightEl = render(tree.suffix);
 
-        var tr = $(document.createElement('tr'));
-        $(tbl).append(tr);
-
-        var leftChild = $(document.createElement('td'));
-        $(tr).append(leftChild);
-
-        var rightChild = $(document.createElement('td'));
-        $(tr).append(rightChild);
-
-        render(leftChild, tree.prefix);
-        render(rightChild, tree.suffix);
-
-        $(parentDiv).append(tbl);
+    if (leftEl !== undefined) {
+        $(ul).append(leftEl);
     }
+    if (rightEl !== undefined) {
+        $(ul).append(rightEl);
+    }
+    
+    return node;
 }
 
 $( "#lookup" ).submit(function( event ) {
@@ -64,8 +69,13 @@ $( "#lookup" ).submit(function( event ) {
             var tree = $( document.createElement('div') ).attr("id", "tree");
             $("#result").append(tree);
 
+            var ul = $(document.createElement('ul'));
+            var li = $(document.createElement('li'));
+            ul.append(li);
+            tree.append(ul);
+        
             var unmarshaledData = JSON.parse(data);
-            render(tree, unmarshaledData);
+            li.append(render(unmarshaledData));
         })
         .always(function() {
             input.attr("disabled", false);

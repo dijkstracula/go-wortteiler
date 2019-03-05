@@ -25,11 +25,20 @@ body {
 }
 
 #result {
+    display: flex;
     text-align: center;
-	width: 100%;
-	overflow: auto;
+    width: 100%;
 }
 
+ul {
+    display: flex;
+    list-style: none;
+    text-align: center;
+    justify-content: center;
+    > li {
+	box-sizing: border-box;
+    }
+}
 #tree {
     display: table;
 	width: 100%;
@@ -59,14 +68,17 @@ input[type="text"] {
 
 table {
     width: 100%;
-	border: 1px solid black;
+    border: 1px solid black;
 }
 
-table tr {
-    text-align: center;
-    vertical-align: top;
+.node {
+    flex: 1;
+    position: relative;
 }
 
+.defn {
+    border: 1px solid black;
+}
 h1, h2 {
 	margin: 0px;
 }
